@@ -1,0 +1,187 @@
+
+------------------- View: ShellView
+
+<Window x:Class="Caliburn_MVVM.Views.ShellView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Caliburn_MVVM.Views"
+        mc:Ignorable="d"
+        Title="ShellView" Height="450" Width="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="20" />
+            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="20" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="20" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="20" />
+        </Grid.RowDefinitions>
+
+        <!-- Row 1 -->
+        <!-- NotifyOfPropertyChange: modify dữ liệu ở textblock khi thay đổi dữ liệu ở textbox -->
+        <!-- Chỗ TextBlock bind FullName, mà trong ViewModel của ShellView, FullName được return là cả FirstName và LastName -->
+        <TextBlock Text="{Binding Path=FullName, Mode=OneWay}" Grid.Row="1" 
+                   Grid.Column="1" Grid.ColumnSpan="2"></TextBlock>
+
+        <!-- Row 2 -->
+        <TextBox MinWidth="100" Grid.Row="2" Grid.Column="1" x:Name="FirstName"></TextBox>
+        <TextBox MinWidth="100" Grid.Row="2" Grid.Column="2" x:Name="LastName"></TextBox>
+
+        <!-- Row 3 -->
+        <!-- DisplayMemberPath: show data theo dạng list, cho listview và combobox -->
+        <ComboBox Grid.Row="3" Grid.Column="1" x:Name="People"
+                  SelectedItem="{Binding Path=SelectedPerson, Mode=OneWayToSource}"
+                  DisplayMemberPath="FirstName" />
+        <!-- SelectedPerson phần tử được chọn sẽ nối với pt thứ 2 của nó trong cùng 1 object( trong { }), được nối nhau bởi dâu xếp gạch _ -->
+        <TextBlock Grid.Row="3" Grid.Column="2" x:Name="SelectedPerson_LastName" />
+
+    </Grid>
+</Window>
+
+
+------------------- ViewModels: ShellViewModel
+using Caliburn.Micro;
+using Caliburn_MVVM.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Caliburn_MVVM.ViewModels
+{
+    public class ShellViewModel : Screen
+    {
+        // Khai báo tham số họ, tên và fullname
+        private string _firstName = "sdf";
+        private string _lastName;
+        private BindableCollection<PersonModel> _people = new BindableCollection<PersonModel>();
+
+        // Khai báo _selectedPerson lấy data từ model PersonModel, dùng cho combobox
+        private PersonModel _selectedPerson;
+
+        // Constructor mặc định cho Combobox, truyền từ model PersonModel
+        public ShellViewModel()
+        {
+            // Kiểu data là JSON
+            // Để view truy cập được đến các phần từ bên trong thì phải _ đến. VD: SelectedPerson_LastName (nghĩa là phần tử được chọn sẽ tương ứng binding tới pt được _ đến trong cùng { }
+            People.Add(new PersonModel { FirstName = "Tim", LastName = "Corey" });
+            People.Add(new PersonModel { FirstName = "Bill", LastName = "Jones" });
+            People.Add(new PersonModel { FirstName = "Sue", LastName = "Storm" });
+        }
+
+        public string FirstName
+        {
+            get
+            {
+                return _firstName;
+            }
+            set
+            {
+                _firstName = value;
+                // NotifyOfPropertyChange: Dùng để modify dữ liệu ngay trên view. Tức là thay đổi dữ liệu ngay giữ các controls khi binding cùng 1 propertyName (Tới giờ mới biết =))))
+                NotifyOfPropertyChange(() => FirstName);
+                NotifyOfPropertyChange(() => FullName);
+            }
+        }
+
+        public string LastName
+        {
+            get
+            {
+                return _lastName;
+            }
+            set
+            {
+                _lastName = value;
+                // NotifyOfPropertyChange: Dùng để modify dữ liệu ngay trên view. Tức là thay đổi dữ liệu ngay giữ các controls khi binding cùng 1 propertyName (Tới giờ mới biết =))))
+                NotifyOfPropertyChange(() => LastName);
+                NotifyOfPropertyChange(() => FullName);
+            }
+        }
+
+        public string FullName
+        {
+            get { return $"{ FirstName } { LastName }"; }
+        }
+
+        // propfull + tab + tab: tạo nhanh bản sao setter getter
+        // Sử dụng BindableCollection<>: Initializes a new instance of the Caliburn.Micro.BindableCollection`1 class, gom People thành một list
+        public BindableCollection<PersonModel> People
+        {
+            get { return _people; }
+            set { _people = value; }
+        }
+
+        // Binding data cho Combobox
+        // Kiểu dữ liệu SelectedPerson là model PersonModel
+        public PersonModel SelectedPerson
+        {
+            get { return _selectedPerson; }
+            set
+            {
+                _selectedPerson = value;
+                NotifyOfPropertyChange(() => SelectedPerson);
+            }
+        }
+
+    }
+}
+
+------------------- Bootstrapper
+using Caliburn.Micro;
+using Caliburn_MVVM.ViewModels;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+
+namespace Caliburn_MVVM
+{
+    public class Bootstrapper : BootstrapperBase
+    {
+        public Bootstrapper()
+        {
+            Initialize();
+        }
+
+        protected override void OnStartup(object sender, StartupEventArgs e)
+        {
+            DisplayRootViewFor<ShellViewModel>();
+        }
+    } 
+}
+
+
+------------------- Models: PersonModel
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Caliburn_MVVM.Models
+{
+    public class PersonModel
+    {
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+    }
+}
+
+
